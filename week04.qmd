@@ -53,6 +53,12 @@ str(x)
 - Why might `typeof()` give different results?
 
 *Write your thoughts here:*
+All three give the same numbers, but:
+- c() makes doubles,  
+- : makes integers,  
+- seq() makes doubles based on length.   
+
+typeof() differs because R stores values differently
 
 
 
@@ -85,6 +91,8 @@ str(x)
 
 *Write your thoughts here:*
 
+- Mixing types results in coercion to the most flexible type
+- The L suffix tells R to treat the number as an integer instead of the default double.
 
 
 #### Atomic Vectors - Characters  
@@ -131,7 +139,9 @@ glue::glue("This unit is great.
 
 *Write your analysis here:*
 
-
+- paste() combines strings with separator
+- cat() prints to console without quotes
+- glue() provides modern string interpolation
 
 #### Atomic Vectors - Logicals  
 
@@ -173,6 +183,8 @@ str(x)
 
 *Write your explanation here:*
 
+- We use == for equality, <- for assignment in R, that's why `1 <- 1` cases an error.
+- = is used for assignment, while == is used for comparison to check if two values are equal.
 
 
 #### Factors  
@@ -200,7 +212,8 @@ as.character(x)
 - How are factors different from character vectors?
 
 *Write your thoughts here:*
-
+- Factors store data as `integer codes with levels`, while character vectors store the actual text strings.  
+- Factors are mainly used for categorical data in analysis and modeling.  
 
 
 ### Working with Matrices and Arrays  
@@ -224,9 +237,13 @@ m
 - Explain the difference between the two matrix creations above
 - How does R fill matrices by default?
 
+
 *Write your answer here:*
 
-
+- Both of the methods create a 2×3 matrix with values 1–6.  
+- `byrow = FALSE` (default) fills the matrix column-wise.  
+- `byrow = TRUE` fills the matrix row-wise.  
+- By default, R fills matrices column-wise.
 
 #### Arrays  
 
@@ -259,7 +276,8 @@ x
 - How do 3-dimensional arrays work?
 
 *Write your explanation here:*
-
+- R recycles values if I don't provide enough values for an array.
+- A 3-dimensional array in R is like a stack of matrices, with rows, columns, and a third dimension for layers.
 
 
 ### Working with Lists  
@@ -288,6 +306,10 @@ x
 
 *Write your analysis here:*
 
+- Lists can contain different data types
+- Use names for easier access
+- Lists can be nested (lists within lists)
+- Named lists make elements easier to access, improve code readability, and allow storing mixed data types with meaningful labels.
 
 
 ### Working with Data Frames and Tibbles  
@@ -338,6 +360,10 @@ x
 
 *Write your thoughts here:*
 
+- Data frames are special lists with equal-length columns
+- Tibbles are modern data frames with better behaviour
+- Use `tribble()` when entering small datasets by hand in a more readable, row-by-row layout.  
+- Use `tibble()` when creating from existing vectors or larger data sources.  
 
 
 ## Loading and Saving Data  
@@ -369,6 +395,10 @@ waldo::compare(x, x_delim)
 
 *Write your observations here:*
 
+- glimpse() shows data in a horizontal, tidy format with column names, types, and sample values, while str() gives a tree-like structure. glimpse() is easier to scan, especially for wide data frames
+- read_csv() is specialised for CSV files
+- read_delim() is more general with specified delimiter
+- Both create tibbles by default
 
 
 ### Writing Data  
@@ -400,7 +430,8 @@ waldo::compare(weather_data, weather_check)
 - Why is it good practice to read the data back after saving?
 
 *Write your thoughts here:*
-
+- A file named `my_weather_data.csv` is created after running the code.
+- It’s good practice to read data back after saving to confirm that the file was written correctly, the format is preserved, and no data was lost or altered.
 
 
 ### Selecting and Modifying Values  
@@ -581,6 +612,7 @@ babynames |>
   filter(name == "Emma") |>
   arrange(year) |>
   select(year, n, prop)
+  
 
 babynames |>
   filter(year >= 2010) |>
@@ -685,12 +717,15 @@ filter(babynames, name == Sea)
 ```{r fix-code-student, eval=FALSE}
 # Fixed code here:
 
+filter(babynames, name == "Sea")
+filter(babynames, name == "Sea")
 
 ```
 
 **Your explanation of what was wrong:**
-
-
+- Use == for equality tests, not =
+- Character strings need quotation marks
+- = is for assignment, == is for comparison
 
 ## Problem 2: Most Popular Names  
 
@@ -698,16 +733,23 @@ Which name was the most popular for a single gender in a single year? Compare ar
 
 ```{r popular-names-student, eval=FALSE}
 # Your code to find highest proportion:
-
-
+babynames |>
+  arrange(desc(prop)) |>
+  head(5)
+  
 # Your code to find highest count:
-
+babynames |>
+  arrange(desc(n)) |>
+  head(5)
 
 ```
 
 **Your analysis:**
 - Are the results the same? Why or why not?
 
+- No, the results are not the same.
+- arrange(desc(prop)) finds the names with the highest proportion within their year-sex group.
+- arrange(desc(n)) finds the names with the largest raw counts of babies given that name, regardless of proportions.
 
 
 ## Problem 3: Popular Girls Names in 2017  
@@ -721,6 +763,11 @@ Write a pipeline that will:
 ```{r girls-2017-student, eval=FALSE}
 # Your pipeline here:
 
+babynames |> 
+  filter(sex == "F", year == 2017) |>
+  select(name, n, prop) |>               # Include proportion too
+  arrange(desc(n)) |>
+  head(10)                               # Top 10 only
 
 ```
 
@@ -749,8 +796,10 @@ table4b  # Population
 - How would you describe what each row and column represents in each table?
 
 *Write your analysis here:*
-
-
+- Tidy data: Each variable is a column, each observation is a row
+- table1 is tidy: Clear structure, easy to work with
+- Common problems: Variables as columns, multiple variables per column
+- Goal: Transform data into tidy format for analysis
 
 ## Pivoting Data: Lengthening and Widening  
 
@@ -803,10 +852,24 @@ cholesterol_data
 
 ```{r cholesterol-solution-student, eval=FALSE}
 # Task 1 - Convert to long format:
+cholesterol_data_long <- cholesterol_data |>
+  pivot_longer(
+    cols=everything(),
+    names_to="diet",
+    values_to="cholesterol"
+  )
 
+cholesterol_data_long
 
 # Task 2 - Calculate summary statistics:
-
+cholesterol_data_long |>
+  group_by(diet) |>
+  summarise(
+    n    = n(),                         # sample size
+    mean = mean(cholesterol),           # group mean
+    sd   = sd(cholesterol),             # group standard deviation
+    .groups = "drop"
+  )
 
 ```
 
@@ -816,7 +879,8 @@ cholesterol_data
 
 *Write your analysis here:*
 
-
+- oat_bran appears to result in lower cholesterol.
+- We got 0.83 and 0.62 as standard deviations for the diets oat_bran and oat_bran_free. The standard deviations give an estimate of a standard distance of the values from the mean value.
 
 ## Advanced Tidy Data Problems  
 
@@ -831,10 +895,20 @@ d. Store back in appropriate place
 
 ```{r calculate-rates-student, eval=FALSE}
 # Your approach for table2:
-
+table2 |>
+  pivot_wider(
+     names_from = type,
+     values_from = count,
+  ) |>
+  mutate(rate=cases/population*100000)
 
 # Your approach for table3:
-
+table3 |> 
+  separate_wider_delim(
+    cols = rate,
+    delim= "\",
+    names = c("cases","population")
+  ) |>
 
 ```
 
@@ -844,7 +918,7 @@ d. Store back in appropriate place
 
 *Write your thoughts here:*
 
-
+- Both approaches result in the same tidy format as table1,plus the calculated rate column.
 
 # Final Reflection  
 
@@ -862,3 +936,5 @@ d. Store back in appropriate place
 - How might you apply these skills to your own data?
 
 *Write your thoughts here:*
+- I will try to find more insights and predict outcomes by training some predictive models using the data further.
+- I will apply these skills to clean, analyze, and finding insights from my own data.
